@@ -9,19 +9,22 @@ import com.getcapacitor.annotation.CapacitorPlugin
 @CapacitorPlugin(name = "BatteryTruth")
 class BatteryTruthPlugin : Plugin() {
 
-    init {
-        System.loadLibrary("native-lib")
+    private val nativeLoaded: Boolean by lazy {
+        runCatching { System.loadLibrary("native-lib") }.isSuccess
     }
 
     private external fun getRealCurrent(): Long
 
     @PluginMethod
     fun getRealCurrentFlow(call: PluginCall) {
-        val currentMa = getRealCurrent()
+        if (!nativeLoaded) {
+            call.unavailable("native-lib is not available on this build")
+            return
+        }
 
+        val currentMa = getRealCurrent()
         val ret = JSObject()
         ret.put("current_ma", currentMa)
-
         call.resolve(ret)
     }
 }
