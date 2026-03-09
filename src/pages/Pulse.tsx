@@ -1,62 +1,88 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Brain } from 'lucide-react';
+import { readBatterySample } from '../services/nativeBatteryBridge';
+import type { BatterySample } from '../services/nativeBatteryBridge';
+
+const BatteryRing = React.memo(({ currentMa, percentage }: { currentMa: number; percentage: number }) => {
+  const dashOffset = useMemo(() => {
+    const progress = Math.min(Math.max(percentage / 100, 0), 1);
+    return 754 * (1 - progress);
+  }, [percentage]);
+
+  return (
+    <div className="relative flex items-center justify-center w-64 h-64 rounded-full border border-slate-800/50">
+      <div className="absolute inset-4 rounded-full border-2 border-primary/20"></div>
+
+      <svg className="absolute inset-0 w-full h-full -rotate-90">
+        <circle
+          cx="128"
+          cy="128"
+          r="120"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="4"
+          className="text-primary"
+          strokeDasharray="754"
+          strokeDashoffset={dashOffset}
+          strokeLinecap="round"
+        />
+      </svg>
+
+      <div className="flex flex-col items-center">
+        <span className="text-slate-500 text-xs font-medium tracking-widest uppercase mb-1">Current Flow</span>
+        <span className="font-mono text-4xl font-bold text-primary tracking-tighter">{currentMa} mA</span>
+      </div>
+
+      <div className="absolute -bottom-2 bg-background-dark px-3 py-1 border border-slate-800 rounded-full">
+        <span className="text-xs font-mono font-bold text-slate-100">{percentage}% CAP</span>
+      </div>
+    </div>
+  );
+});
 
 const Pulse: React.FC = () => {
-  const metrics = {
-    currentFlow: 2500,
-    percentage: 85,
-    remaining: '4h 12m',
-    temp: '34°C',
-    voltage: '3800 mV',
-    health: 'Normal'
-  };
+  const [metrics, setMetrics] = useState<BatterySample | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const syncSample = async () => {
+      const sample = await readBatterySample();
+      if (mounted) {
+        setMetrics(sample);
+      }
+    };
+
+    void syncSample();
+    const interval = window.setInterval(() => {
+      void syncSample();
+    }, 1000);
+
+    return () => {
+      mounted = false;
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  if (!metrics) {
+    return <div className="px-6 py-8 text-slate-400">Loading battery telemetry...</div>;
+  }
 
   const getAIInsight = () => {
-    if (metrics.currentFlow > 0) {
-      return `Charging at ${metrics.currentFlow.toLocaleString()} mA with stable current. Estimated full charge in ${metrics.remaining}.`;
-    } else {
-      return `The battery breath is steady. Discharging at ${Math.abs(metrics.currentFlow)} mA. Cycle health remains optimal at 98.2%.`;
+    if (metrics.currentMa > 0) {
+      return `Charging at ${metrics.currentMa.toLocaleString()} mA with stable current. Estimated full charge in ${metrics.remaining}.`;
     }
+
+    return `The battery breath is steady. Discharging at ${Math.abs(metrics.currentMa)} mA. Cycle health remains optimal.`;
   };
 
   return (
     <div className="flex flex-col px-6">
-      {/* Hero Widget: Battery Ring */}
       <div className="flex flex-col items-center justify-center py-10 relative">
-        <div className="relative flex items-center justify-center w-64 h-64 rounded-full border border-slate-800/50">
-          {/* Inner Ring Glow */}
-          <div className="absolute inset-4 rounded-full border-2 border-primary/20"></div>
-
-          {/* Progress Ring (SVG) */}
-          <svg className="absolute inset-0 w-full h-full -rotate-90">
-            <circle
-              cx="128"
-              cy="128"
-              r="120"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="4"
-              className="text-primary"
-              strokeDasharray="754"
-              strokeDashoffset={754 * (1 - 0.75)} // Simulated 75% progress
-              strokeLinecap="round"
-            />
-          </svg>
-
-          <div className="flex flex-col items-center">
-            <span className="text-slate-500 text-xs font-medium tracking-widest uppercase mb-1">Current Flow</span>
-            <span className="font-mono text-4xl font-bold text-primary tracking-tighter">{metrics.currentFlow} mA</span>
-            <span className="text-primary/60 text-[10px] mt-2 font-mono uppercase tracking-widest">Stable</span>
-          </div>
-
-          {/* Battery % Marker */}
-          <div className="absolute -bottom-2 bg-background-dark px-3 py-1 border border-slate-800 rounded-full">
-            <span className="text-xs font-mono font-bold text-slate-100">{metrics.percentage}% CAP</span>
-          </div>
-        </div>
+        <BatteryRing currentMa={metrics.currentMa} percentage={metrics.percentage} />
+        <span className="text-[10px] text-slate-500 uppercase tracking-widest mt-4">Source: {metrics.source}</span>
       </div>
 
-      {/* Status Bar */}
       <div className="grid grid-cols-3 gap-1 bg-neutral-dark/40 border border-slate-800/50 rounded-xl p-4 mb-6">
         <div className="flex flex-col items-center border-r border-slate-800">
           <span className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Remaining</span>
@@ -64,26 +90,22 @@ const Pulse: React.FC = () => {
         </div>
         <div className="flex flex-col items-center border-r border-slate-800">
           <span className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Temp</span>
-          <span className="font-mono text-sm text-slate-200">{metrics.temp}</span>
+          <span className="font-mono text-sm text-slate-200">{metrics.tempC}°C</span>
         </div>
         <div className="flex flex-col items-center">
           <span className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Voltage</span>
-          <span className="font-mono text-sm text-slate-200">{metrics.voltage}</span>
+          <span className="font-mono text-sm text-slate-200">{metrics.voltageMv} mV</span>
         </div>
       </div>
 
-      {/* AI Insight Card */}
       <div className="bg-neutral-dark border border-slate-800 rounded-xl p-5 mb-8">
         <div className="flex items-center gap-2 mb-3">
           <Brain className="text-primary w-4 h-4" />
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">AI Analysis</span>
         </div>
-        <p className="text-slate-300 text-sm leading-relaxed font-light">
-          {getAIInsight()}
-        </p>
+        <p className="text-slate-300 text-sm leading-relaxed font-light">{getAIInsight()}</p>
       </div>
 
-      {/* Hardware Health */}
       <div className="space-y-4 mb-10">
         <div className="flex justify-between items-center px-2">
           <span className="text-xs text-slate-500 uppercase tracking-widest">Hardware Health</span>

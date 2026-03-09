@@ -1,12 +1,24 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { History, MoreVertical, Gauge, Repeat, LineChart, Zap } from 'lucide-react';
+import { getChargeCycles } from '../services/chargeCycleStore';
+import type { ChargeCycle } from '../services/chargeCycleStore';
+
+const formatDate = (timestamp: number) =>
+  new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(timestamp);
 
 const Memory: React.FC = () => {
-  const sessions = [
-    { date: 'May 24, 2026', charge: '15% → 80%', amount: '+3250mAh', type: 'Fast Charge' },
-    { date: 'May 23, 2026', charge: '42% → 95%', amount: '+2650mAh', type: 'Standard' },
-    { date: 'May 21, 2026', charge: '5% → 100%', amount: '+4750mAh', type: 'Full Cycle' },
-  ];
+  const [sessions, setSessions] = useState<ChargeCycle[]>([]);
+
+  useEffect(() => {
+    const loadCycles = async () => {
+      const cycles = await getChargeCycles();
+      setSessions(cycles);
+    };
+
+    void loadCycles();
+  }, []);
+
+  const totalCycles = useMemo(() => sessions.length, [sessions]);
 
   return (
     <div className="flex flex-col">
@@ -21,7 +33,6 @@ const Memory: React.FC = () => {
       </header>
 
       <main className="flex-1 overflow-y-auto pb-6">
-        {/* Health Score Section */}
         <section className="p-6">
           <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
             <div className="flex justify-between items-end mb-4">
@@ -38,12 +49,11 @@ const Memory: React.FC = () => {
               <div className="bg-primary h-3 rounded-full shadow-[0_0_10px_rgba(0,230,119,0.5)]" style={{ width: '85%' }}></div>
             </div>
             <p className="text-slate-400 text-xs mt-4 leading-relaxed">
-              Your battery has undergone <span className="text-primary font-medium">500 complete cycles</span>. Degradation is within expected professional parameters for Li-ion cells.
+              Your battery has undergone <span className="text-primary font-medium">{totalCycles} complete cycles</span>. History is now persisted in IndexedDB.
             </p>
           </div>
         </section>
 
-        {/* Stats Cards */}
         <section className="px-6 grid grid-cols-2 gap-4">
           <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
             <Gauge className="text-primary w-5 h-5 mb-2" />
@@ -53,11 +63,10 @@ const Memory: React.FC = () => {
           <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
             <Repeat className="text-primary w-5 h-5 mb-2" />
             <p className="text-slate-400 text-xs font-medium">Total Cycles</p>
-            <p className="text-xl font-bold text-slate-100">500</p>
+            <p className="text-xl font-bold text-slate-100">{totalCycles}</p>
           </div>
         </section>
 
-        {/* Degradation Graph */}
         <section className="p-6">
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
             <LineChart className="text-primary w-5 h-5" />
@@ -85,32 +94,28 @@ const Memory: React.FC = () => {
           </div>
         </section>
 
-        {/* Cycle Logs */}
         <section className="px-6">
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
             <Zap className="text-primary w-5 h-5" />
             Charging Sessions
           </h3>
           <div className="space-y-3">
-            {sessions.map((session, idx) => (
-              <div key={idx} className="flex items-center gap-4 bg-slate-900/50 border border-slate-800 p-4 rounded-xl">
+            {sessions.map((session) => (
+              <div key={session.id} className="flex items-center gap-4 bg-slate-900/50 border border-slate-800 p-4 rounded-xl">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <Zap className="text-primary w-5 h-5" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-bold text-slate-100">{session.date}</p>
-                  <p className="text-xs text-slate-400">{session.charge}</p>
+                  <p className="text-sm font-bold text-slate-100">{formatDate(session.timestamp)}</p>
+                  <p className="text-xs text-slate-400">{session.startLevel}% → {session.endLevel}%</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-bold text-primary">{session.amount}</p>
+                  <p className="text-sm font-bold text-primary">+{session.addedMah}mAh</p>
                   <p className="text-[10px] text-slate-500 uppercase">{session.type}</p>
                 </div>
               </div>
             ))}
           </div>
-          <button className="w-full mt-4 py-3 border border-slate-800 rounded-lg text-slate-400 text-sm font-medium hover:bg-slate-900 transition-colors">
-            View All History
-          </button>
         </section>
       </main>
     </div>
