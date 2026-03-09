@@ -38,6 +38,27 @@ const defaultCycles: ChargeCycle[] = [
   }
 ];
 
+const sortCyclesByTimestamp = (cycles: ChargeCycle[]): ChargeCycle[] =>
+  [...cycles].sort((a, b) => b.timestamp - a.timestamp);
+
+const parseStoredCycles = (rawValue: string | null): ChargeCycle[] | null => {
+  if (!rawValue) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue) as unknown;
+
+    if (!Array.isArray(parsed)) {
+      return null;
+    }
+
+    return sortCyclesByTimestamp(parsed as ChargeCycle[]);
+  } catch {
+    return null;
+  }
+};
+
 const openDb = (): Promise<IDBDatabase> =>
   new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -61,7 +82,7 @@ const getAllCyclesFromDb = async (): Promise<ChargeCycle[]> => {
     const request = store.getAll();
 
     request.onsuccess = () => {
-      const result = (request.result as ChargeCycle[]).sort((a, b) => b.timestamp - a.timestamp);
+      const result = sortCyclesByTimestamp(request.result as ChargeCycle[]);
       resolve(result);
     };
 
@@ -96,13 +117,13 @@ export const getChargeCycles = async (): Promise<ChargeCycle[]> => {
     await saveCyclesToDb(defaultCycles);
     return defaultCycles;
   } catch {
-    const fallback = localStorage.getItem(STORE_NAME);
+    const fallback = parseStoredCycles(localStorage.getItem(STORE_NAME));
 
     if (fallback) {
-      return JSON.parse(fallback) as ChargeCycle[];
+      return fallback;
     }
 
     localStorage.setItem(STORE_NAME, JSON.stringify(defaultCycles));
-    return defaultCycles;
+    return sortCyclesByTimestamp(defaultCycles);
   }
 };
