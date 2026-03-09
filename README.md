@@ -96,6 +96,25 @@ npm run lint
 ### 2) Android Integration (เบื้องต้น)
 หากต้องการใช้ plugin จริงบน Android จำเป็นต้องมีโปรเจกต์ Capacitor/Android ที่ผูก native library และ plugin registration ครบถ้วน.
 
+
+## 🔗 MCP Server URL
+
+เพิ่ม utility สำหรับสร้าง URL ของ MCP server ไว้ที่ `src/services/mcpServerUrl.ts` เพื่อให้ config ได้จาก environment หรือ runtime โดยไม่ hardcode ในหลายจุด.
+
+ลำดับการเลือก base URL:
+1. `options.baseUrl`
+2. `VITE_MCP_SERVER_BASE_URL`
+3. `window.location.origin` (fallback เป็น `http://localhost:3000` เมื่อไม่มี browser runtime)
+
+ตัวอย่างการใช้งาน:
+
+```ts
+import { createMcpServerUrl } from './services/mcpServerUrl';
+
+const url = createMcpServerUrl({ path: '/mcp' });
+// เช่น https://your-host.example/mcp
+```
+
 ## 🤝 การมีส่วนร่วม
 
 ยินดีรับ Issue และ Pull Request โดยเฉพาะด้าน:
