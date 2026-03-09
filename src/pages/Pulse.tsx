@@ -1,9 +1,25 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Brain } from 'lucide-react';
+import BatteryTruth from '../services/BatteryBridge';
 
 const Pulse: React.FC = () => {
+  const [currentFlow, setCurrentFlow] = useState<number>(0);
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const { current_ma } = await BatteryTruth.getRealCurrentFlow();
+        setCurrentFlow(current_ma);
+      } catch (error) {
+        console.error('Governance Enforcer: ไม่สามารถเชื่อมต่อกับฮาร์ดแวร์ได้', error);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const metrics = {
-    currentFlow: 2500,
+    currentFlow,
     percentage: 85,
     remaining: '4h 12m',
     temp: '34°C',
@@ -14,9 +30,9 @@ const Pulse: React.FC = () => {
   const getAIInsight = () => {
     if (metrics.currentFlow > 0) {
       return `Charging at ${metrics.currentFlow.toLocaleString()} mA with stable current. Estimated full charge in ${metrics.remaining}.`;
-    } else {
-      return `The battery breath is steady. Discharging at ${Math.abs(metrics.currentFlow)} mA. Cycle health remains optimal at 98.2%.`;
     }
+
+    return `The battery breath is steady. Discharging at ${Math.abs(metrics.currentFlow)} mA. Cycle health remains optimal at 98.2%.`;
   };
 
   return (
