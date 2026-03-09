@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Brain } from 'lucide-react';
 import { readBatterySample } from '../services/nativeBatteryBridge';
 import type { BatterySample } from '../services/nativeBatteryBridge';
+import BatteryTruth from '../services/BatteryBridge';
 
 const BatteryRing = React.memo(({ currentMa, percentage }: { currentMa: number; percentage: number }) => {
   const dashOffset = useMemo(() => {
@@ -42,6 +43,7 @@ const BatteryRing = React.memo(({ currentMa, percentage }: { currentMa: number; 
 
 const Pulse: React.FC = () => {
   const [metrics, setMetrics] = useState<BatterySample | null>(null);
+  const [currentFlow, setCurrentFlow] = useState<number | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -53,9 +55,22 @@ const Pulse: React.FC = () => {
       }
     };
 
+    const syncTruthCurrent = async () => {
+      try {
+        const { current_ma } = await BatteryTruth.getRealCurrentFlow();
+        if (mounted) {
+          setCurrentFlow(current_ma);
+        }
+      } catch (error) {
+        console.error('Governance Enforcer: ไม่สามารถเชื่อมต่อกับฮาร์ดแวร์ได้', error);
+      }
+    };
+
     void syncSample();
+    void syncTruthCurrent();
     const interval = window.setInterval(() => {
       void syncSample();
+      void syncTruthCurrent();
     }, 1000);
 
     return () => {
@@ -68,19 +83,21 @@ const Pulse: React.FC = () => {
     return <div className="px-6 py-8 text-slate-400">Loading battery telemetry...</div>;
   }
 
+  const resolvedCurrentMa = currentFlow ?? metrics.currentMa;
+
   const getAIInsight = () => {
-    if (metrics.currentMa > 0) {
-      return `Charging at ${metrics.currentMa.toLocaleString()} mA with stable current. Estimated full charge in ${metrics.remaining}.`;
+    if (resolvedCurrentMa > 0) {
+      return `Charging at ${resolvedCurrentMa.toLocaleString()} mA with stable current. Estimated full charge in ${metrics.remaining}.`;
     }
 
-    return `The battery breath is steady. Discharging at ${Math.abs(metrics.currentMa)} mA. Cycle health remains optimal.`;
+    return `The battery breath is steady. Discharging at ${Math.abs(resolvedCurrentMa)} mA. Cycle health remains optimal.`;
   };
 
   return (
     <div className="flex flex-col px-6">
       <div className="flex flex-col items-center justify-center py-10 relative">
-        <BatteryRing currentMa={metrics.currentMa} percentage={metrics.percentage} />
-        <span className="text-[10px] text-slate-500 uppercase tracking-widest mt-4">Source: {metrics.source}</span>
+        <BatteryRing currentMa={resolvedCurrentMa} percentage={metrics.percentage} />
+        <span className="text-[10px] text-slate-500 uppercase tracking-widest mt-4">Source: {currentFlow !== null ? 'native-jni' : metrics.source}</span>
       </div>
 
       <div className="grid grid-cols-3 gap-1 bg-neutral-dark/40 border border-slate-800/50 rounded-xl p-4 mb-6">
