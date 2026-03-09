@@ -1,0 +1,8 @@
+{
+	"appId": "com.ampereeye.app",
+	"appName": "AmpereEye",
+	"webDir": "dist",
+	"android": {
+		"allowMixedContent": false
+	}
+}

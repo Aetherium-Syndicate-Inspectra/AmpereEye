@@ -39,8 +39,8 @@ const Pulse: React.FC = () => {
     currentFlow,
     percentage: 85,
     remaining: '4h 12m',
-    temp: '34°C',
-    voltage: '3800 mV',
+    tempC: 34,
+    voltageMv: 3800,
     health: 'Normal'
   };
 
