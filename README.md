@@ -6,7 +6,14 @@
 
 AmpereEye คือแอปพลิเคชันตรวจสอบแบตเตอรี่ที่วัดค่าจากกระแสไฟจริง (Real Current mAh) ผ่านฮาร์ดแวร์ Fuel Gauge IC ไม่ใช้การคาดเดาจากโปรไฟล์พลังงาน มาพร้อม AI Governance และระบบวิเคราะห์เชิงลึก ช่วยให้คุณเข้าใจพฤติกรรมแบตเตอรี่และยืดอายุการใช้งานได้อย่างแท้จริง
 
-![AmpereEye Banner](assets/banner.png) <!-- หากมีรูป -->
+### 🚀 Frontend Prototype Implementation
+This repository contains a high-fidelity React + TypeScript prototype of the AmpereEye dashboard, featuring:
+- **The Pulse:** Real-time metrics with a circular battery status ring and dynamic AI-driven insights.
+- **The Memory:** Battery health tracking with SVG-based capacity retention charts and session logs.
+- **The Enforcer:** Energy consumption breakdown (Screen On/Off) and background process management.
+- **Persistent Notification:** A simulation of the Android notification shade snippet for high-density monitoring.
+
+---
 
 ---
 
@@ -138,6 +145,13 @@ flowchart TD
 
 ## 🛠️ เทคโนโลยีที่ใช้
 
+### Frontend (Dashboard Prototype)
+- **Framework:** React 18 + TypeScript
+- **Styling:** Tailwind CSS v3 (OLED-optimized dark theme)
+- **Icons:** Lucide-React
+- **Build Tool:** Vite
+
+### System Architecture (Target)
 - ภาษา: Kotlin, Java (สำหรับ Android), Go / C (สำหรับ native daemon)
 - ฐานข้อมูล: Room (SQLite), Realm (optional)
 - Background Task: WorkManager, AlarmManager
@@ -147,19 +161,34 @@ flowchart TD
 
 ---
 
-## 📲 การติดตั้ง (สำหรับนักพัฒนาที่ต้องการ Build เอง)
+## 📲 การติดตั้งและการพัฒนา (Setup & Development)
 
-1. Clone repository:
+### Frontend Dashboard Preview
+1. Clone repository และเข้าสู่โฟลเดอร์:
    ```bash
    git clone https://github.com/yourname/AmpereEye.git
    cd AmpereEye
    ```
-2. เปิดโปรเจคด้วย Android Studio (Ladybug หรือใหม่กว่า)
-3. รัน build script สำหรับ native library:
+2. ติดตั้ง dependencies:
+   ```bash
+   npm install
+   ```
+3. รัน Development Server:
+   ```bash
+   npm run dev
+   ```
+4. สร้าง Production Build:
+   ```bash
+   npm run build
+   ```
+
+### Native Android App (Target)
+1. เปิดโปรเจคด้วย Android Studio (Ladybug หรือใหม่กว่า)
+2. รัน build script สำหรับ native library:
    ```bash
    ./gradlew assembleDebug
    ```
-4. ติดตั้ง APK ลงอุปกรณ์ (ต้องเปิด USB Debugging)
+3. ติดตั้ง APK ลงอุปกรณ์ (ต้องเปิด USB Debugging)
 
 ข้อกำหนด: Android 8.0 (API 26) ขึ้นไป และอุปกรณ์ต้องมี Fuel Gauge IC ที่รองรับการอ่านค่า CURRENT_NOW และ CHARGE_COUNTER (อุปกรณ์สมัยใหม่ส่วนใหญ่รองรับ)
 
