@@ -4,9 +4,9 @@
 
 ## Setup Commands
 
-- Install dependencies: `[package manager] install`
-- Start development server: `[command]`
-- Build for production: `[command]`
+- Install dependencies: `npm install`
+- Start development server: `npm run dev`
+- Build for production: `npm run build`
 
 ## Development Workflow
 
