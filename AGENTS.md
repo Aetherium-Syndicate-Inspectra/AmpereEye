@@ -25,7 +25,7 @@
 ## Code Style
 
 - [Language and framework conventions]
-- [Linting rules and commands]
+- Linting command: `npm run lint`
 - [Formatting requirements]
 - [File organization patterns]
 
