@@ -39,7 +39,7 @@
 ## Pull Request Guidelines
 
 - Title format: [component] Brief description
-- Required checks: `[lint command]`, `[test command]`
+- Required checks: `npm run lint`, `[test command]`
 - [Review requirements]
 
 ## Additional Notes
