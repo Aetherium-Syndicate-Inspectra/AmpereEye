@@ -1,5 +1,7 @@
 import React from 'react';
 import { Gavel, Info, TrendingUp, Brain, Settings } from 'lucide-react';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 const Enforcer: React.FC = () => {
   const offenders = [
@@ -116,9 +118,9 @@ const Enforcer: React.FC = () => {
   );
 };
 
-// Simplified cn function for this file
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
+// Utility class merger for predictable Tailwind overrides.
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
 }
 
 export default Enforcer;

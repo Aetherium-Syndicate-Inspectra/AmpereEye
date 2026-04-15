@@ -11,10 +11,12 @@ const DB_NAME = 'ampere-eye-db';
 const DB_VERSION = 1;
 const STORE_NAME = 'charge_cycles';
 
+const hoursAgo = (hours: number): number => Date.now() - hours * 60 * 60 * 1000;
+
 const defaultCycles: ChargeCycle[] = [
   {
     id: 'cycle-1',
-    timestamp: new Date('2026-05-24T08:00:00Z').getTime(),
+    timestamp: hoursAgo(6),
     startLevel: 15,
     endLevel: 80,
     addedMah: 3250,
@@ -22,7 +24,7 @@ const defaultCycles: ChargeCycle[] = [
   },
   {
     id: 'cycle-2',
-    timestamp: new Date('2026-05-23T08:00:00Z').getTime(),
+    timestamp: hoursAgo(28),
     startLevel: 42,
     endLevel: 95,
     addedMah: 2650,
@@ -30,7 +32,7 @@ const defaultCycles: ChargeCycle[] = [
   },
   {
     id: 'cycle-3',
-    timestamp: new Date('2026-05-21T08:00:00Z').getTime(),
+    timestamp: hoursAgo(53),
     startLevel: 5,
     endLevel: 100,
     addedMah: 4750,
