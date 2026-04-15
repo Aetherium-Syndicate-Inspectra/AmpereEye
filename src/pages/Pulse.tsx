@@ -1,23 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Brain } from 'lucide-react';
 import BatteryTruth, { isBatteryTruthSupported } from '../services/BatteryBridge';
+import { readBatterySample, type BatterySample } from '../services/nativeBatteryBridge';
 
 const Pulse: React.FC = () => {
   const [currentFlow, setCurrentFlow] = useState<number>(0);
+  const [batterySample, setBatterySample] = useState<BatterySample | null>(null);
 
   useEffect(() => {
-    if (!isBatteryTruthSupported()) {
-      return;
-    }
-
     let cancelled = false;
 
     const fetchCurrent = async () => {
       try {
-        const { current_ma } = await BatteryTruth.getRealCurrentFlow();
+        if (isBatteryTruthSupported()) {
+          const { current_ma } = await BatteryTruth.getRealCurrentFlow();
 
+          if (!cancelled) {
+            setCurrentFlow(current_ma);
+          }
+
+          return;
+        }
+
+        const sample = await readBatterySample();
         if (!cancelled) {
-          setCurrentFlow(current_ma);
+          setCurrentFlow(sample.currentMa);
+          setBatterySample(sample);
         }
       } catch (error) {
         if (!cancelled) {
@@ -35,21 +43,21 @@ const Pulse: React.FC = () => {
     };
   }, []);
 
-  const metrics = {
+  const metrics = useMemo(() => ({
     currentFlow,
-    percentage: 85,
-    remaining: '4h 12m',
-    tempC: 34,
-    voltageMv: 3800,
-    health: 'Normal'
-  };
+    percentage: batterySample?.percentage ?? 85,
+    remaining: batterySample?.remaining ?? '4h 12m',
+    tempC: batterySample?.tempC ?? 34,
+    voltageMv: batterySample?.voltageMv ?? 3800,
+    health: batterySample?.health ?? 'Normal'
+  }), [batterySample, currentFlow]);
 
   const getAIInsight = () => {
     if (metrics.currentFlow > 0) {
       return `Charging at ${metrics.currentFlow.toLocaleString()} mA with stable current. Estimated full charge in ${metrics.remaining}.`;
     }
 
-    return `The battery breath is steady. Discharging at ${Math.abs(metrics.currentFlow)} mA. Cycle health remains optimal at 98.2%.`;
+    return `The battery breathes steadily. Discharging at ${Math.abs(metrics.currentFlow)} mA. Cycle health remains optimal at 98.2%.`;
   };
 
   return (
